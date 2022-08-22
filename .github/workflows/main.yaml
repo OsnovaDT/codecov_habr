@@ -1,7 +1,7 @@
 name: Django CI/CD Workflow
 
 env:
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  SECRET_KEY: "test_secret_key"
 
 on:
   push:
@@ -13,10 +13,8 @@ on:
 
 jobs:
   build:
-    # Operation system
     runs-on: ubuntu-latest
     services:
-      # Postgres service
       postgres:
         image: postgres
         env:
@@ -27,7 +25,6 @@ jobs:
           - 5432:5432
         options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
     steps:
-      # Initial steps
       - name: Checkout code
         uses: actions/checkout@v2
       - name: Cache dependency
@@ -44,14 +41,14 @@ jobs:
       - name: Check Python version
         run: python --version
 
-      # Installation
+      # Стаим зависимости
       - name: Install requirements
         run: pip install -r requirements.txt
 
-      # Migrations
+      # Создаем и выполняем миграции
       - name: Run migrations
-        run: python manage.py migrate
+        run: python manage.py makemigrations && python manage.py migrate
 
-      # Tests
+      # Запускаем тесты
       - name: Run tests
         run: python manage.py test
