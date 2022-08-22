@@ -1,0 +1,57 @@
+name: Django CI/CD Workflow
+
+env:
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Operation system
+    runs-on: ubuntu-latest
+    services:
+      # Postgres service
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: github-actions
+        ports:
+          - 5432:5432
+        options: --health-cmd pg_isready --health-interval 10s --health-timeout 5s --health-retries 5
+    steps:
+      # Initial steps
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Cache dependency
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+      - name: Setup python environment
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Check Python version
+        run: python --version
+
+      # Installation
+      - name: Install requirements
+        run: pip install -r requirements.txt
+
+      # Migrations
+      - name: Run migrations
+        run: python manage.py migrate
+
+      # Tests
+      - name: Run tests
+        run: python manage.py test
